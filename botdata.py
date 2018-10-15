@@ -1,0 +1,2 @@
+TOKEN = 'token'
+password = 'Admin'

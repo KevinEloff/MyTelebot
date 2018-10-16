@@ -9,6 +9,7 @@ import json
 from vars import knowntext, grouptext
 from replyhandler import getPrivateReply
 from botdata import password, TOKEN
+import random
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=logging.INFO)
@@ -27,8 +28,10 @@ def private_msg(bot, update):
     if reply != None:
         if reply != None:
             if '[sticker]' in reply:
-
-
+                stickers = readJson('chatdata.json').get("stickers")
+                
+                i = random.randint(0, len(stickers))
+                bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
                 return
             elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
@@ -45,15 +48,21 @@ def group_msg(bot, update):
         reply = getPrivateReply(update.message.text)
         if reply != None:
             if '[sticker]' in reply:
-
-
+                stickers = readJson('chatdata.json').get("stickers")
+                
+                i = random.randint(0, len(stickers))
+                bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
                 return
             elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
 
-                return 
+                return
             reply = reply.format(update.message.from_user.first_name)
             bot.send_message(chat_id=update.message.chat_id, text=reply)
+
+def sticker(bot, update):
+    logging.info("Adding sticker from chat_id = {}".format(update.message.chat_id))
+    addSticker(update)
 
 
 
@@ -122,6 +131,8 @@ def writeJson(data, file):
 
 def readJson(file):
     with open(file, 'r') as fp:
+        if fp == None:
+            return None
         return json.load(fp)
 
 def addChat(update, group=False):
@@ -146,6 +157,22 @@ def addChat(update, group=False):
                     "id": update.message.chat_id,
                     "level": 0})
     writeJson(chats, loc)
+
+def addSticker(update):
+    loc = "chatdata.json"
+    data = readJson(loc)
+    
+    if data == None:
+        data = {"stickers":[]}
+
+    contains = False
+    for sticker in data.get("stickers"):
+        if update.message.sticker.file_id == sticker:
+            contains = True
+
+    if contains == False:
+        data.get("stickers").append(update.message.sticker.file_id)
+    writeJson(data, loc)
 
 def isAdmin(chat_id):
     chats = readJson("chats.txt")
@@ -175,7 +202,7 @@ def add_ilq(function):
 ##  MAIN  ##
 if __name__ == '__main__':
     print("Starting bot!")
-    
+    random.seed(time.time())
     #add_cmd('help', help_private, filters= ~ Filters.group)
     #add_cmd('help', help_group, filters= Filters.group)
     add_cmd('start', start, filters= ~ Filters.group)
@@ -184,6 +211,7 @@ if __name__ == '__main__':
     add_cmd('auth', auth, pass_args=True)
     add_msg(Filters.group & Filters.text, group_msg)
     add_msg(Filters.text, private_msg)
+    add_msg(Filters.sticker, sticker)
     
     add_msg(Filters.command, unknown)
     #add_ilq(inline_caps)

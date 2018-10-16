@@ -78,6 +78,12 @@ def getPrivateReply(text):
 def question(text):
     return None
 
+def default(text):
+    reply = what(text)
+    if reply == None:
+        reply = fetch(text)
+    return reply
+
 def what(text):
     text = replacebest(text, whats)
     indices = []
@@ -92,29 +98,29 @@ def what(text):
     
 
     if indices == [0]: #Time
-        date = time.localtime(time.time())
-        return "The current time is {}:{}".format(date.tm_hour, date.tm_min)
+        date = time.gmtime(time.time() + 7200)
+        return "The current time is {}:{:02d}".format(date.tm_hour, date.tm_min)
     elif indices == [1]: #Date
-        date = time.localtime(time.time())
+        date = time.gmtime(time.time() + 7200)
         return "The date is {}/{}/{}".format(date.tm_mday, date.tm_mon, date.tm_year)
     elif indices == [0, 1] or indices == [1, 0]: #Date and time
-        date = time.localtime(time.time())
-        return "It is {}:{} on {}/{}/{}".format(date.tm_hour, date.tm_min, date.tm_mday, date.tm_mon, date.tm_year)
+        date = time.gmtime(time.time() + 7200)
+        return "It is {}:{:02d} on {}/{}/{}".format(date.tm_hour, date.tm_min, date.tm_mday, date.tm_mon, date.tm_year)
     elif indices == [2] or indices == [6, 2]: #month
         if 6 in indices:
-            date = time.localtime(time.time() + 2592000)
+            date = time.gmtime(time.time() + 2592000 + 7200)
             return "Next month is {}".format(months[date.tm_mon-1])
         else:
-            date = time.localtime(time.time())
+            date = time.gmtime(time.time() + 7200)
             return "This month is {}".format(months[date.tm_mon-1])
     elif indices == [1, 5] or indices == [5, 1]: #Tomorrow Date
-        date = time.localtime(time.time() + 86400)
+        date = time.gmtime(time.time() + 86400 + 7200)
         return "Tomorrow's date is {}/{}/{}".format(date.tm_mday, date.tm_mon, date.tm_year)
     elif indices == [5]:
-        date = time.localtime(time.time() + 86400)
+        date = time.gmtime(time.time() + 86400 + 7200)
         return "Tomorrow is {} {}/{}/{}".format(weekdays[date.tm_wday], date.tm_mday, date.tm_mon, date.tm_year)
     elif indices == [3, 4]: #Day of week
-        date = time.localtime(time.time())
+        date = time.gmtime(time.time() + 7200)
         return "Today is {}".format(weekdays[date.tm_wday])
 
     #return "You'll have to ask someone else!"
@@ -156,7 +162,7 @@ def fetch(text):
         return "Please visit pornhub.com"
 
     if len(indices) > 1:
-        return "Don't ask for too much 🙄"
+        return "Don't ask for too much D:"
 
     return None
 
@@ -181,7 +187,7 @@ def want(text):
     return None
 
 queryFunctions = {
-   -2: what,
+   -2: default,
     0: what,
     1: how,
     2: fetch,
@@ -191,6 +197,6 @@ queryFunctions = {
 if __name__ == '__main__':
     print("Testing!")
 
-    text = "I want stickers"
+    text = "sticker?"
     print(getPrivateReply(text))
     

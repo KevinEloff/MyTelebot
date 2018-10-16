@@ -16,7 +16,7 @@ def getQuery(text):
 
     #Quenstion type in list
     for word in words:
-        num = bestmatch(queries, word, threshold=0.2, max=2)
+        num = bestmatch(queries, word, threshold=0.1, max=2)
         if (num != -1):
             return num
     
@@ -32,7 +32,7 @@ def getStatement(text):
 
     #Quenstion type in list
     for word in words:
-        num = bestmatch(statements, word, threshold=0.2, max=2)
+        num = bestmatch(statements, word, threshold=0.1, max=2)
         if (num != -1):
             return num
 
@@ -50,7 +50,7 @@ def getPrivateReply(text):
     if (qid != -1):
         query = text
         for filter in queries:
-            query = replacebest(query, filter, threshold=0.2)
+            query = replacebest(query, filter, threshold=0.1, max=2)
             query = filtertext(query, filter)
             # print(query + " " + filter[0])
         
@@ -85,7 +85,7 @@ def default(text):
     return reply
 
 def what(text):
-    text = replacebest(text, whats)
+    text = replacebest(text, whats, threshold=0.3, max=2)
     indices = []
     words = text.split()
     for i in range(0, len(words)):
@@ -129,7 +129,7 @@ def how(text):
     return None
 
 def fetch(text):
-    text = replacebest(text, gets)
+    text = replacebest(text, gets, threshold=0.3, max=2)
     indices = []
     words = text.split()
     for i in range(0, len(words)):
@@ -157,7 +157,16 @@ def fetch(text):
             return "Here's an article for you: {}".format(data.get('articles')[random.randint(0, 9)].get('url'))
 
     if indices == [2]: #Stickers
-        return "[sticker]"
+        num = 1
+        for word in words:
+            try:
+                num = int(word)
+            except ValueError:
+                num = num
+        if num > 3:
+            return "I can only send 1 to 3 stickers at a time!"
+
+        return "[sticker] {}".format(num)
     if indices == [3]: #Nudes
         return "Please visit pornhub.com"
 
@@ -167,7 +176,7 @@ def fetch(text):
     return None
 
 def want(text):
-    text = replacebest(text, gets)
+    text = replacebest(text, gets, threshold=0.3, max=2)
     indices = []
     words = text.split()
     for i in range(0, len(words)):
@@ -197,6 +206,6 @@ queryFunctions = {
 if __name__ == '__main__':
     print("Testing!")
 
-    text = "sticker?"
+    text = "3 stickers?"
     print(getPrivateReply(text))
     

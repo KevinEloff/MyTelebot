@@ -40,7 +40,7 @@ queries = [
     ['what', 'what\'s'],
     ['how'],
     ['get', 'fetch', 'send', 'show', 'give'],
-    ['want', 'need']
+    ['want']
 ]
 
 statements = [

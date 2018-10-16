@@ -30,8 +30,9 @@ def private_msg(bot, update):
             if '[sticker]' in reply:
                 stickers = readJson('chatdata.json').get("stickers")
                 
-                i = random.randint(0, len(stickers))
-                bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
+                for n in range(0, int(reply.split()[1])):
+                    i = random.randint(0, len(stickers))
+                    bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
                 return
             elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
@@ -50,8 +51,9 @@ def group_msg(bot, update):
             if '[sticker]' in reply:
                 stickers = readJson('chatdata.json').get("stickers")
                 
-                i = random.randint(0, len(stickers))
-                bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
+                for n in range(0, int(reply.split()[1])):
+                    i = random.randint(0, len(stickers))
+                    bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
                 return
             elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
@@ -61,8 +63,17 @@ def group_msg(bot, update):
             bot.send_message(chat_id=update.message.chat_id, text=reply)
 
 def sticker(bot, update):
-    logging.info("Adding sticker from chat_id = {}".format(update.message.chat_id))
     addSticker(update)
+
+    target = getChatVariable(update.message.chat_id, "target")
+    if target != "":
+        setChatVariable(update.message.chat_id, "target", "")
+        chats = readJson('chats.txt')
+        for chat in chats.get("chats"):
+            if target.lower() == chat.get("name").lower():
+                bot.send_sticker(chat_id=chat.get("id"), sticker=update.message.sticker.file_id)
+                bot.send_message(chat_id=update.message.chat_id, text="Sent!")
+                return
 
 
 
@@ -71,6 +82,7 @@ def unknown(bot, update):
 
 ##  COMMAND FUNCTIONS  ##
 def start(bot, update):
+    addChat(update)
     bot.send_message(chat_id=update.message.chat_id, text="New fone who dis")
 
 def caps(bot, update, args):
@@ -88,6 +100,34 @@ def send(bot, update, args):
         # logging.info(chat)
         if args[0].lower() == chat.get("name").lower():
             bot.send_message(chat_id=chat.get("id"), text=text)
+            return
+    
+    bot.send_message(chat_id=update.message.chat_id, text="No person or group with the name {} found!".format(args[0]))
+
+def sendsticker(bot, update, args):
+    if isAdmin(update.message.chat_id) == False:
+        bot.send_message(chat_id=update.message.chat_id, text="You're not permitted to do that!")
+        return
+
+    stickers = readJson('chatdata.json').get("stickers")
+
+    if len(args) == 1:
+        setChatVariable(update.message.chat_id, "target", args[0])
+        bot.send_message(chat_id=update.message.chat_id, text="Send me a sticker to forward!")
+        return
+
+    i = 0
+    try:
+        i = int(args[1])
+    except ValueError:
+        bot.send_message(chat_id=update.message.chat_id, text="{} is not a valid sticker number or ID!".format(args[1]))
+        return 
+
+    
+    chats = readJson('chats.txt')
+    for chat in chats.get("chats"):
+        if args[0].lower() == chat.get("name").lower():
+            bot.send_sticker(chat_id=chat.get("id"), sticker=stickers[i])
             return
     
     bot.send_message(chat_id=update.message.chat_id, text="No person or group with the name {} found!".format(args[0]))
@@ -150,15 +190,18 @@ def addChat(update, group=False):
             chats.get("chats").append({
                     "name": update.message.chat.first_name, 
                     "id": update.message.chat_id,
-                    "level": 0})
+                    "level": 0,
+                    "target": None})
         else:
             chats.get("chats").append({
                     "name": update.message.chat.title, 
                     "id": update.message.chat_id,
-                    "level": 0})
+                    "level": 0,
+                    "target": None})
     writeJson(chats, loc)
 
 def addSticker(update):
+    logging.info("Adding sticker from chat_id = {}".format(update.message.chat_id))
     loc = "chatdata.json"
     data = readJson(loc)
     
@@ -173,6 +216,23 @@ def addSticker(update):
     if contains == False:
         data.get("stickers").append(update.message.sticker.file_id)
     writeJson(data, loc)
+
+def getChatVariable(chat_id, variable):
+    chats = readJson("chats.txt")
+    # logging.info(update.message)
+    for chat in chats.get("chats"):
+        if chat_id == chat.get("id"):
+            return chat.get(variable)
+
+
+def setChatVariable(chat_id, variable, val):
+    chats = readJson("chats.txt")
+    # logging.info(update.message)
+    for chat in chats.get("chats"):
+        if chat_id == chat.get("id"):
+            chat[variable] = val
+
+    writeJson(chats, "chats.txt")
 
 def isAdmin(chat_id):
     chats = readJson("chats.txt")
@@ -208,6 +268,7 @@ if __name__ == '__main__':
     add_cmd('start', start, filters= ~ Filters.group)
     add_cmd('echo', caps, pass_args=True)
     add_cmd('send', send, pass_args=True)
+    add_cmd('sticker', sendsticker, pass_args=True)
     add_cmd('auth', auth, pass_args=True)
     add_msg(Filters.group & Filters.text, group_msg)
     add_msg(Filters.text, private_msg)

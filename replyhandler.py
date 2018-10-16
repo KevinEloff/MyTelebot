@@ -117,7 +117,7 @@ def what(text):
         date = time.localtime(time.time())
         return "Today is {}".format(weekdays[date.tm_wday])
 
-    return "You'll have to ask someone else!"
+    #return "You'll have to ask someone else!"
 
 def how(text):
     return None
@@ -191,6 +191,6 @@ queryFunctions = {
 if __name__ == '__main__':
     print("Testing!")
 
-    text = "Send News"
+    text = "I want stickers"
     print(getPrivateReply(text))
     

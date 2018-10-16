@@ -21,22 +21,16 @@ dispatcher = updater.dispatcher
 
 ##  CHAT FUNCTIONS  ##
 def private_msg(bot, update):
-    # i = bestmatch(knowntext, update.message.text)
     logging.info("{}: {}".format(update.message.chat.first_name, update.message.text))
     addChat(update)
-    # func = functions.get(i)
-    # #addChat(update)
-    # reply = func()  
-    # reply = reply.format(update.message.chat.first_name)
-    # bot.send_message(chat_id=update.message.chat_id, text=reply)
     reply = getPrivateReply(update.message.text)
     if reply != None:
         if reply != None:
-            if 'sticker' in reply:
+            if '[sticker]' in reply:
 
 
                 return
-            elif 'meme' in reply:
+            elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
 
                 return 
@@ -44,28 +38,17 @@ def private_msg(bot, update):
         bot.send_message(chat_id=update.message.chat_id, text=reply)
 
 def group_msg(bot, update):
-    # i = bestmatch(grouptext, update.message.text)
     logging.info("[{}] {}: {}".format(update.message.chat.title, update.message.from_user.first_name, update.message.text))
     addChat(update, group=True)
-    # #addChat(update)
-    # #logging.info(update)
-    # if i == -1:
-    #     return
-    # func = functions.get(i)
-    # reply = func()  
-    # if (update.message.from_user.first_name == "B"):
-    #     update.message.from_user.first_name = "Matthew Baas"
-    # reply = reply.format(update.message.from_user.first_name)
-    # bot.send_message(chat_id=update.message.chat_id, text=reply)
     needname = 0
     if 'erion' in update.message.text.lower() or needname == 0:
         reply = getPrivateReply(update.message.text)
         if reply != None:
-            if 'sticker' in reply:
+            if '[sticker]' in reply:
 
 
                 return
-            elif 'meme' in reply:
+            elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
 
                 return 
@@ -74,53 +57,8 @@ def group_msg(bot, update):
 
 
 
-def nothing():
-    return "Red panda said wot"
-
-def hello():
-    return "Hello {0}!"
-
-def gettime():
-    date = time.localtime(time.time())
-    return "The current time is {}:{}".format(date.tm_hour, date.tm_min)
-
-def howare():
-    return "Feeling pretty botty today, yourself?"
-
-def bye():
-    return "Take care {0}!"
-
-def name():
-    return "My master has named me Erion, and you are {0}!"
-
-def good():
-    return "That's good to hear"
-
-def getdate():
-    date = time.localtime(time.time())
-    return "The date is {}/{}/{}".format(date.tm_mday, date.tm_mon, date.tm_year)
-
-def thanks():
-    return "Pleasure!"
-
-def noyou():
-    return "no u"
-
 def unknown(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Sorry, I didn't understand that command.")
-
-functions = {
-   -1: nothing,
-    0: hello,
-    1: gettime,
-    2: howare,
-    3: bye,
-    4: name,
-    5: good,
-    6: getdate,
-    7: thanks,
-    8: noyou
-}
 
 ##  COMMAND FUNCTIONS  ##
 def start(bot, update):
@@ -177,13 +115,6 @@ def inline_caps(bot, update):
 
 
 ##  OTHER FUNCTIONS  ##
-def indexof(lst, item):
-    for i in range(0, len(lst)):
-        for a in lst[i]:
-            if a.upper() == item.upper():
-                return i
-    return -1
-
 def writeJson(data, file):
     "Write json data to file"
     with open(file, 'w') as fp:

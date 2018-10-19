@@ -4,6 +4,7 @@ import requests
 import time
 import string
 import random
+import logging
 
 def filtertext(text, filter):
     textwords = text.split()
@@ -132,6 +133,7 @@ def fetch(text):
     text = replacebest(text, gets, threshold=0.3, max=2)
     indices = []
     words = text.split()
+    
     for i in range(0, len(words)):
         for j in range(0, len(gets)):
             if words[i] == gets[j]:
@@ -143,18 +145,30 @@ def fetch(text):
         #return "Who listens to news anyway?"
 
         ntoken = '02ec5c82f8d3487b8ba495c1d221ad76'
-        url = 'https://newsapi.org/v2/top-headlines?sources=fox-news&apiKey='
+        url = 'https://newsapi.org/v2/top-headlines?country=za&language=en&apiKey='
+
+        if 'about' in text:
+            for i in range(0, len(words)):
+                if words[i] == 'about' and i+1 < len(words):
+                    url = 'https://newsapi.org/v2/top-headlines?q={}&sortBy=popularity&language=en&apiKey='.format(words[i+1])
+                    # data = requests.get(url + ntoken).json()
+                    # return "Here's a random article for you: {}".format(data.get('articles')[random.randint(0, data.get('totalResults')-1)].get('url'))
+
+
 
         data = requests.get(url + ntoken).json()
         # print(type(data))
-
-        random.seed(time.time())
+        
+        if data.get('totalResults') < 1:
+            return "No news found!"
+        
         if ('random' in text.lower()):
-            return "Here's a random article for you: {}".format(data.get('articles')[random.randint(0, 9)].get('url'))
-        if ('top' in text.lower()):
+            return "Here's a random article for you: {}".format(data.get('articles')[random.randint(0, data.get('totalResults')-1)].get('url'))
+        elif ('top' in text.lower()):
             return "Here's the top news article: {}".format(data.get('articles')[0].get('url'))
         else:
-            return "Here's an article for you: {}".format(data.get('articles')[random.randint(0, 9)].get('url'))
+            return "Here's an article for you: {}".format(data.get('articles')[random.randint(0, data.get('totalResults')-1)].get('url'))
+
 
     if indices == [2]: #Stickers
         num = 1
@@ -165,6 +179,12 @@ def fetch(text):
                 num = num
         if num > 3:
             return "I can only send 1 to 3 stickers at a time!"
+
+        #print('\ud83' in text)
+        for word in words:
+            # logging.info(ord(word[0]))
+            if ord(word[0]) > 5000:
+                return  "[sticker] {} {}".format(num, word)
 
         return "[sticker] {}".format(num)
     if indices == [3]: #Nudes
@@ -206,6 +226,6 @@ queryFunctions = {
 if __name__ == '__main__':
     print("Testing!")
 
-    text = "3 stickers?"
+    text = "Send \\ud83d\\udc46 sticker"
     print(getPrivateReply(text))
     

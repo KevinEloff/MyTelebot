@@ -28,11 +28,26 @@ def private_msg(bot, update):
     if reply != None:
         if reply != None:
             if '[sticker]' in reply:
-                stickers = readJson('chatdata.json').get("stickers")
+                data = readJson('chatdata.json').get("stickers")
                 
+                stickers = []
+
+                if len(reply.split()) == 3:
+                    for sticker in data:
+                        if sticker["emoji"] == reply.split()[2]:
+                            stickers.append(sticker)
+                else:
+                    stickers = data
+                
+                if (len(stickers) < 1):
+                    bot.send_message(chat_id=update.message.chat_id, text="I don't have any stickers like that yet!")
+                    return
+
+                # logging.info(reply)
                 for n in range(0, int(reply.split()[1])):
-                    i = random.randint(0, len(stickers))
-                    bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
+                    i = random.randint(0, len(stickers)-1)
+                    # logging.info("{} => {}".format(len(stickers), i))
+                    bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i].get("file_id"))
                 return
             elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
@@ -49,11 +64,24 @@ def group_msg(bot, update):
         reply = getPrivateReply(update.message.text)
         if reply != None:
             if '[sticker]' in reply:
-                stickers = readJson('chatdata.json').get("stickers")
+                data = readJson('chatdata.json').get("stickers")
                 
+                stickers = []
+
+                if len(reply.split()) == 3:
+                    for sticker in data:
+                        if sticker["emoji"] == reply.split()[2]:
+                            stickers.append(sticker)
+                else:
+                    sticker = data
+
+                if (len(stickers) < 1):
+                    bot.send_message(chat_id=update.message.chat_id, text="I don't have any stickers like that yet!")
+                    return
+
                 for n in range(0, int(reply.split()[1])):
-                    i = random.randint(0, len(stickers))
-                    bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i])
+                    i = random.randint(0, len(stickers)-1)
+                    bot.sendSticker(chat_id=update.message.chat_id, sticker=stickers[i].get("file_id"))
                 return
             elif '[meme]' in reply:
                 bot.sendPhoto(chat_id=update.message.chat_id, photo='http://i.imgflip.com/1bij.jpg', caption="One does not simply send a meme")
@@ -89,6 +117,11 @@ def caps(bot, update, args):
     text = ' '.join(args)
     bot.send_message(chat_id=update.message.chat_id, text=text)
 
+def clear(bot, update):
+    data = {"stickers":[]}
+    writeJson(data, "chatdata.json")
+
+
 def send(bot, update, args):
     if isAdmin(update.message.chat_id) == False:
         bot.send_message(chat_id=update.message.chat_id, text="You're not permitted to do that!")
@@ -100,6 +133,22 @@ def send(bot, update, args):
         # logging.info(chat)
         if args[0].lower() == chat.get("name").lower():
             bot.send_message(chat_id=chat.get("id"), text=text)
+            return
+    
+    bot.send_message(chat_id=update.message.chat_id, text="No person or group with the name {} found!".format(args[0]))
+
+def delete(bot, update, args):
+    if isAdmin(update.message.chat_id) == False:
+        bot.send_message(chat_id=update.message.chat_id, text="You're not permitted to do that!")
+        return
+
+    #ToDo add record of bot last messages
+    chats = readJson('chats.txt')
+    text = ' '.join(args[1:])
+    for chat in chats.get("chats"):
+        # logging.info(chat)
+        if args[0].lower() == chat.get("name").lower():
+            bot.delete_message(chat_id=args[0], message_id=args[1])
             return
     
     bot.send_message(chat_id=update.message.chat_id, text="No person or group with the name {} found!".format(args[0]))
@@ -127,7 +176,7 @@ def sendsticker(bot, update, args):
     chats = readJson('chats.txt')
     for chat in chats.get("chats"):
         if args[0].lower() == chat.get("name").lower():
-            bot.send_sticker(chat_id=chat.get("id"), sticker=stickers[i])
+            bot.send_sticker(chat_id=chat.get("id"), sticker=stickers[i].get("file_id"))
             return
     
     bot.send_message(chat_id=update.message.chat_id, text="No person or group with the name {} found!".format(args[0]))
@@ -184,6 +233,7 @@ def addChat(update, group=False):
         # logging.info(chat)
         if update.message.chat_id == chat.get("id"):
             contains = True
+            chat["last"] = update.message.text
 
     if contains == False:
         if group == False:
@@ -191,17 +241,19 @@ def addChat(update, group=False):
                     "name": update.message.chat.first_name, 
                     "id": update.message.chat_id,
                     "level": 0,
-                    "target": None})
+                    "target": None,
+                    "last": update.message.text})
         else:
             chats.get("chats").append({
                     "name": update.message.chat.title, 
                     "id": update.message.chat_id,
                     "level": 0,
-                    "target": None})
+                    "target": None,
+                    "last": update.message.text})
     writeJson(chats, loc)
 
 def addSticker(update):
-    logging.info("Adding sticker from chat_id = {}".format(update.message.chat_id))
+    logging.info("Adding sticker from chat_id = {}, emoji = {}".format(update.message.chat_id, update.message.sticker.emoji))
     loc = "chatdata.json"
     data = readJson(loc)
     
@@ -210,12 +262,18 @@ def addSticker(update):
 
     contains = False
     for sticker in data.get("stickers"):
-        if update.message.sticker.file_id == sticker:
+        if update.message.sticker.file_id == sticker.get("file_id"):
             contains = True
 
     if contains == False:
-        data.get("stickers").append(update.message.sticker.file_id)
-    writeJson(data, loc)
+        # if len(update.message.sticker.emoji) < 5:
+        #     return
+
+        data.get("stickers").append({
+                "file_id": update.message.sticker.file_id,
+                "emoji": update.message.sticker.emoji
+            })
+        writeJson(data, loc)
 
 def getChatVariable(chat_id, variable):
     chats = readJson("chats.txt")
@@ -268,8 +326,10 @@ if __name__ == '__main__':
     add_cmd('start', start, filters= ~ Filters.group)
     add_cmd('echo', caps, pass_args=True)
     add_cmd('send', send, pass_args=True)
+    add_cmd('clear', clear, pass_args=True)
     add_cmd('sticker', sendsticker, pass_args=True)
     add_cmd('auth', auth, pass_args=True)
+    add_cmd('delete', delete)
     add_msg(Filters.group & Filters.text, group_msg)
     add_msg(Filters.text, private_msg)
     add_msg(Filters.sticker, sticker)

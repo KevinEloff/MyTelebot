@@ -61,10 +61,13 @@ whats = [
 ]
 
 gets = [
-    "memes",
+    "memes",#0
     "news",
     "stickers",
-    "nudes"
+    "nudes", #3
+    "south",
+    "africa",
+    "america"
 ]
 
 weekdays = [
